@@ -14,17 +14,14 @@ from creds import get_credentials
 
 email, password = get_credentials()
 
-ubr = sys.argv[1]
 br_list = getBrowser()
-
-if ubr[1] == "chrome":
-    ubr[1] = "chromium"
+if not br_list:
+    print("Error: Chromium browser not found. Please install Chromium.")
+    sys.exit(1)
 
 with sync_playwright() as p:
 
-    br_type = getattr(p, ubr)
-
-    browser = br_type.launch_persistent_context(
+    browser = p.chromium.launch_persistent_context(
         executable_path=br_list[0],
         user_data_dir="./config",
         headless=False,
