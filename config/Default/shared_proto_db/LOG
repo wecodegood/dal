@@ -1,3 +1,3 @@
-2026/06/21-11:10:54.886 e3964 Reusing MANIFEST /home/sinquf/dev/dal/config/Default/shared_proto_db/MANIFEST-000001
-2026/06/21-11:10:54.886 e3964 Recovering log #3
-2026/06/21-11:10:54.887 e3964 Reusing old log /home/sinquf/dev/dal/config/Default/shared_proto_db/000003.log 
+2026/06/21-14:20:26.799 15784f Reusing MANIFEST /home/sinquf/dev/dal/config/Default/shared_proto_db/MANIFEST-000001
+2026/06/21-14:20:26.799 15784f Recovering log #3
+2026/06/21-14:20:26.800 15784f Reusing old log /home/sinquf/dev/dal/config/Default/shared_proto_db/000003.log 

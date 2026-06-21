@@ -9,7 +9,7 @@ from initMods.Loginer import LoginToDeepSeek
 from initMods.GetLastResponse import GetLastResponse
 from useExamples.chatWithModel import chatLoop
 from Mods.Message import SendGetMessage, SendMessage
-
+from Mods.Setup import getBrowser
 #moduals:
     #init prompt moduals:
 from initMods.initMessages import InitChatMessage
@@ -26,14 +26,23 @@ from Mods.Message import SendMessage
 import time
 import os
 import subprocess
+import sys
 
 
+ubr = sys.argv[1]
+br_list = getBrowser()
 
+if ubr[1] == "chrome":
+    ubr[1] = "chromium"
 
 with sync_playwright() as p:
 
-    browser = p.chromium.launch_persistent_context(
-        executable_path="/usr/bin/chromium",
+    br_type = getattr(p, ubr)
+
+
+
+    browser = br_type.launch_persistent_context(
+        executable_path=br_list[0],
         user_data_dir="./config",
         headless=False,
         args=[
