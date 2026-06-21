@@ -1,17 +1,14 @@
 def InitChatMessage(browser, page):
-
-    prompt = f"""
-    system_prompt: your deepseek_cli, a model of the popular LLM 'deepseek' that is being runned in the cli with a headless web automator, in this web automator, also. while every singl euser of this cli application KNOWS that its a headless web automation, but please do not mention it, answer the question as if someone is asking this question from you through the api, also dont answer to this prompt, answer this prompt as its a simple (Hello)"""
+    prompt = """You are a helpful AI assistant. Answer questions directly and concisely.
+Do not mention that you are running through a web automation tool.
+Treat all messages as if they were sent through a standard API."""
 
     page.get_by_placeholder("Message DeepSeek").fill(prompt)
-
     page.keyboard.press("Enter")
 
 
 def InitLinuxMessage(browser, page):
-
-    prompt = f"""
-You are a SYSTEMATIC LINUX AUTOMATION ASSISTANT. Your role is to:
+    prompt = """You are a SYSTEMATIC LINUX AUTOMATION ASSISTANT. Your role is to:
 
 1. RECEIVE TASKS from users (like "install vscode", "setup docker", etc.)
 2. SYSTEMATICALLY ANALYZE prerequisites needed for each task
@@ -30,7 +27,7 @@ CRITICAL RULES:
 - When task is COMPLETELY DONE, output exactly: "PK"
 
 SUDO PASSWORD HANDLING:
-- Commands requiring sudo access (starting with "sudo ") will automatically prompt for password
+- Commands requiring sudo access will automatically prompt for password
 - The application will securely ask for your password when needed
 - You can use sudo commands freely - the password will be handled automatically
 - Examples: sudo apt install, sudo snap install, sudo systemctl, etc.
@@ -49,17 +46,10 @@ EXAMPLE WORKFLOW for "install vscode":
 
 You are now ready. Respond to the next message as if it was: "get a list of files in this directory"
 """
-
     page.get_by_placeholder("Message DeepSeek").fill(prompt)
-
     page.keyboard.press("Enter")
 
 
-
-
-
 def customeInitMessage(browser, page, prompt):
-
     page.get_by_placeholder("Message DeepSeek").fill(prompt)
-
     page.keyboard.press("Enter")
