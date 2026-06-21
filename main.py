@@ -9,7 +9,6 @@ from Mods.Message import SendMessage
 from Mods.Setup import check_chromium_installed
 from Mods.Sudo import elevate_to_root
 from initMods.initMessages import InitLinuxMessage
-from creds import get_credentials
 from art import BANNER
 from colorama import init
 from termcolor import colored
@@ -19,12 +18,6 @@ init()
 
 def main():
     print(BANNER)
-
-    try:
-        email, password = get_credentials()
-    except ValueError as e:
-        print(colored(f"Configuration error: {e}", "red"))
-        sys.exit(1)
 
     installed, chromium_path = check_chromium_installed()
     if not installed:
@@ -95,7 +88,7 @@ def main():
                 'Sec-Fetch-User': '?1',
             })
 
-            if not LoginToDeepSeek(email, password, page):
+            if not LoginToDeepSeek(page):
                 print(colored("Failed to login to DeepSeek. Exiting.", "red"))
                 browser.close()
                 sys.exit(1)
