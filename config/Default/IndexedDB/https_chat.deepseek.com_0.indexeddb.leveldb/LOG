@@ -1,0 +1,14 @@
+2026/06/21-11:10:56.219 e397b Reusing MANIFEST /home/sinquf/dev/dal/config/Default/IndexedDB/https_chat.deepseek.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/06/21-11:10:56.219 e397b Recovering log #81
+2026/06/21-11:10:56.219 e397b Reusing old log /home/sinquf/dev/dal/config/Default/IndexedDB/https_chat.deepseek.com_0.indexeddb.leveldb/000081.log 
+2026/06/21-11:10:56.219 e397b Delete type=2 #79
+2026/06/21-11:10:56.227 e397c Level-0 table #86: started
+2026/06/21-11:10:56.233 e397c Level-0 table #86: 1630 bytes OK
+2026/06/21-11:10:56.237 e397c Delete type=0 #81
+2026/06/21-11:10:56.237 e3962 Manual compaction at level-0 from '\x00\x17\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x18\x00\x00\x00' @ 0 : 0; will stop at '\x00\x17\x00\x00\xc8 \x00l\x00o\x00c\x00a\x00l\x00-\x00f\x00o\x00r\x00a\x00g\x00e\x00-\x00d\x00e\x00t\x00e\x00c\x00t\x00-\x00b\x00l\x00o\x00b\x00-\x00s\x00u\x00p\x00p\x00o\x00r\x00t' @ 2421 : 1
+2026/06/21-11:10:56.237 e3962 Compacting 1@0 + 1@1 files
+2026/06/21-11:10:56.242 e3962 Generated table #87@0: 93 keys, 1310 bytes
+2026/06/21-11:10:56.242 e3962 Compacted 1@0 + 1@1 files => 1310 bytes
+2026/06/21-11:10:56.246 e3962 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/06/21-11:10:56.246 e3962 Delete type=2 #86
+2026/06/21-11:10:56.247 e3962 Manual compaction at level-0 from '\x00\x17\x00\x00\xc8 \x00l\x00o\x00c\x00a\x00l\x00-\x00f\x00o\x00r\x00a\x00g\x00e\x00-\x00d\x00e\x00t\x00e\x00c\x00t\x00-\x00b\x00l\x00o\x00b\x00-\x00s\x00u\x00p\x00p\x00o\x00r\x00t' @ 2421 : 1 .. '\x00\x18\x00\x00\x00' @ 0 : 0; will stop at (end)

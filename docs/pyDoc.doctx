@@ -1,0 +1,681 @@
+# مستندات پایتون پروژه DAL
+
+---
+
+## فهرست مطالب
+
+1. [نمای کلی](#نمای-کلی)
+2. [ساختار پروژه](#ساختار-پروژه)
+3. [وابستگی‌ها](#وابستگی‌ها)
+4. [فایل‌های اصلی](#فایل‌های-اصلی)
+5. [ماژول‌ها](#ماژول‌ها)
+6. [توابع](#توابع)
+7. [نحوه اجرا](#نحوه-اجرا)
+8. [مشکلات شناخته شده](#مشکلات-شناخته-شده)
+9. [پیشنهادات بهبود](#پیشنهادات-بهبود)
+10. [نکات امنیتی](#نکات-امنیتی)
+
+---
+
+## نمای کلی
+
+پروژه DAL یک ابزار `CLI` است که با زبان **Python 3.10+** نوشته شده است. هدف آن اتوماسیون وظایف لینوکس از طریق ارتباط با مدل DeepSeek است. پروژه از **Playwright** برای اتوماسیون مرورگر و **Subprocess** برای اجرای دستورات سیستمی استفاده می‌کند.
+
+---
+
+## ساختار پروژه
+
+```
+dal/
+├── main.py                 # فایل اصلی برنامه
+├── art.py                  # آرت ASCII لوگو
+├── creds.py                # اطلاعات ورود
+├── requirements.txt        # لیست وابستگی‌ها
+├── .gitignore              # فایل‌های نادیده گرفته شده
+│
+├── Mods/                   # ماژول‌های اصلی
+│   └── Message.py          # توابع ارسال/دریافت پیام
+│
+├── initMods/               # ماژول‌های راه‌اندازی
+│   ├── Loginer.py          # تابع ورود خودکار
+│   ├── GetLastResponse.py  # تابع دریافت پاسخ
+│   └── initMessages.py     # پیام‌های اولیه
+│
+├── useExamples/            # نمونه‌های استفاده
+│   └── chatWithModel.py    # حلقه اصلی چت
+│
+├── config/                 # تنظیمات مرورگر Chromium
+│
+├── test/                   # تست‌ها
+│   └── index.php           # فایل تست PHP
+│
+└── docs/                   # مستندات
+    ├── persian.doctx       # مستندات فارسی
+    ├── english.doctx       # مستندات انگلیسی
+    ├── russian.doctx       # مستندات روسی
+    ├── aiDoc.doctx         # مستندات هوش مصنوعی
+    └── pyDoc.doctx         # مستندات پایتون
+```
+
+---
+
+## وابستگی‌ها
+
+### پکیج‌های اصلی
+
+| پکیج | نسخه | هدف |
+|-------|-------|------|
+| `playwright` | `latest` | اتوماسیون مرورگر |
+| `colorama` | `latest` | رنگ‌بندی خروجی ترمینال |
+| `termcolor` | `latest` | رنگ‌بندی متن |
+
+### پکیج‌های داخلی
+
+| پکیج | هدف |
+|-------|------|
+| `time` | مدیریت زمان (داخلی Python) |
+| `subprocess` | اجرای دستورات سیستمی (داخلی Python) |
+| `platform` | تشخیص سیستم عامل (داخلی Python) |
+| `os` | عملیات سیستم‌فایل (داخلی Python) |
+
+### پکیج‌های غیرمستقیم
+
+| پکیج | هدف |
+|-------|------|
+| `playwright-stealth` | جلوگیری از تشخیص اتوماسیون |
+
+### نصب وابستگی‌ها
+
+```bash
+pip install -r requirements.txt
+playwright install chromium
+```
+
+---
+
+## فایل‌های اصلی
+
+### main.py - نقطه ورود
+
+**عملکرد**: راه‌اندازی مرورگر `Chromium` و آغاز فرآیند اتوماسیون
+
+**جزئیات فنی**:
+
+```python
+with sync_playwright() as p:
+    browser = p.chromium.launch_persistent_context(
+        executable_path="/usr/bin/chromium",
+        user_data_dir="./config",
+        headless=False,
+        args=[...],
+        viewport={'width': 1920, 'height': 1080}
+    )
+```
+
+**آرگومان‌های مرورگر**:
+
+| آرگومان | توضیح |
+|---------|--------|
+| `--disable-blink-features=AutomationControlled` | جلوگیری از تشخیص اتوماسیون |
+| `--no-sandbox` | غیرفعال کردن `sandbox` |
+| `--disable-dev-shm-usage` | جلوگیری از مشکلات حافظه |
+| `--disable-web-security` | غیرفعال کردن امنیت وب |
+| `--disable-gpu` | غیرفعال کردن `GPU` |
+| `--disable-extensions` | غیرفعال کردن افزونه‌ها |
+| `--remote-debugging-port=9222` | باز کردن پورت دیباگ |
+
+**هدرهای `HTTP`**:
+
+```python
+page.set_extra_http_headers({
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) ...',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,...',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1'
+})
+```
+
+**جریان اجرا**:
+
+1. راه‌اندازی مرورگر `Chromium`
+2. ایجاد صفحه جدید
+3. اعمال حالت `Stealth`
+4. تنظیم هدرهای `HTTP`
+5. ورود به DeepSeek
+6. ارسال پیام اولیه
+7. شروع حلقه چت
+8. بستن مرورگر
+
+---
+
+### art.py - لوگوی ASCII
+
+**عملکرد**: نمایش لوگوی پروژه در ابتدای اجرا
+
+**محتوا**:
+```
+ $$$$$$\  $$\            $$$$$$\             $$$$$$\  
+$$  __$$\ \__|          $$  __$$\           $$  __$$\ 
+$$ /  \__|$$\ $$$$$$$\  $$ /  $$ |$$\   $$\ $$ /  \__|
+\$$$$$$\  $$ |$$  __$$\ $$ |  $$ |$$ |  $$ |$$$$\     
+ \____$$\ $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$  _|    
+$$\   $$ |$$ |$$ |  $$ |$$ $$\$$ |$$ |  $$ |$$ |      
+\$$$$$$  |$$ |$$ |  $$ |\$$$$$$ / \$$$$$$  |$$ |      
+ \______/ \__|\__|  \__| \___$$$\  \______/ \__|      
+                             \___|                    
+```
+
+**استفاده**:
+
+```python
+from art import art
+print(art)
+```
+
+---
+
+### creds.py - اطلاعات ورود
+
+**عملکرد**: ذخیره ایمیل و رمزعبور برای ورود به DeepSeek
+
+**محتوا**:
+
+```python
+email = "your5dad6666@gmail.com"
+password = "yasin.11A"
+```
+
+**⚠️ هشدار امنیتی**: این فایل حاوی اطلاعات حساس است و نباید در ریپازیتوری ذخیره شود.
+
+**روش بهینه**:
+
+```python
+import os
+email = os.getenv('DEEPSEEK_EMAIL')
+password = os.getenv('DEEPSEEK_PASSWORD')
+```
+
+---
+
+### requirements.txt - لیست وابستگی‌ها
+
+**محتوا**:
+
+```
+playwright
+time
+colorama
+termcolor
+```
+
+**نکته**: پکیج `time` جزء کتابخانه استاندارد `Python` است.
+
+---
+
+## ماژول‌ها
+
+### Mods/Message.py - ماژول پیام
+
+**عملکرد**: توابع ارسال و دریافت پیام از DeepSeek
+
+#### تابع SendMessage
+
+```python
+def SendMessage(page, message):
+    page.get_by_placeholder("Message DeepSeek").fill(message)
+    page.keyboard.press("Enter")
+```
+
+**پارامترها**:
+
+- `page`: شیء صفحه `Playwright`
+- `message`: متن پیام (`string`)
+
+**عملکرد**:
+
+1. پیدا کردن فیلد ورودی با `placeholder`
+2. پر کردن فیلد با متن پیام
+3. فشردن کلید `Enter`
+
+#### تابع SendGetMessage
+
+```python
+def SendGetMessage(page, message):
+    from initMods.GetLastResponse import GetLastResponse
+    page.get_by_placeholder("Message DeepSeek").fill(message)
+    page.keyboard.press("Enter")
+    response = GetLastResponse()
+    return response
+```
+
+**پارامترها**:
+
+- `page`: شیء صفحه `Playwright`
+- `message`: متن پیام (`string`)
+
+**بازگشت**: پاسخ DeepSeek (`string`)
+
+---
+
+### initMods/Loginer.py - ماژول ورود
+
+**عملکرد**: ورود خودکار به حساب DeepSeek
+
+#### تابع LoginToDeepSeek
+
+```python
+def LoginToDeepSeek(evar, pvar, page, url="https://chat.deepseek.com"):
+    page.goto(url, wait_until="networkidle")
+    
+    email_field = page.get_by_placeholder("Phone number / email address")
+    password_field = page.get_by_placeholder("Password")
+    
+    if email_field.is_visible() and password_field.is_visible():
+        email_field.fill(evar)
+        password_field.fill(pvar)
+        page.get_by_role("button", name="Log in", exact=True).click()
+        
+        try:
+            page.wait_for_selector('textarea[placeholder*="Message"]', timeout=15000)
+            return True
+        except:
+            error = page.locator('[class*="error"]').first
+            if error.is_visible():
+                print(f"Login error: {error.text_content()}")
+            return False
+    return True
+```
+
+**پارامترها**:
+
+- `evar`: ایمیل کاربر (`string`)
+- `pvar`: رمزعبور کاربر (`string`)
+- `page`: شیء صفحه `Playwright`
+- `url`: آدرس DeepSeek (`string`, پیش‌فرض: `https://chat.deepseek.com`)
+
+**بازگشت**: `True` (موفق) یا `False` (ناموفق)
+
+**مدیریت خطا**:
+
+- اگر فیلدها قابل مشاهده نباشند، `True` برمی‌گرداند
+- اگر خطایی رخ دهد، پیام خطا چاپ می‌شود
+- در صورت انتظار طولانی (۱۵ ثانیه)، `False` برمی‌گردد
+
+---
+
+### initMods/GetLastResponse.py - ماژول دریافت پاسخ
+
+**عملکرد**: دریافت آخرین پاسخ از DeepSeek با انتظار برای تکمیل
+
+#### تابع GetLastResponse
+
+```python
+def GetLastResponse(
+    page,
+    max_wait_ms: int = 60000,
+    stable_checks_required: int = 5,
+    poll_interval_s: float = 0.2,
+    min_start_chars: int = 5,
+    on_update=None,
+    strip_prefix: str | None = None,
+):
+```
+
+**پارامترها**:
+
+| پارامتر | نوع | مقدار پیش‌فرض | توضیح |
+|---------|-----|---------------|--------|
+| `page` | `Page` | - | شیء صفحه `Playwright` |
+| `max_wait_ms` | `int` | `60000` | حداکثر زمان انتظار (`ms`) |
+| `stable_checks_required` | `int` | `5` | تعداد بررسی‌های پایدار |
+| `poll_interval_s` | `float` | `0.2` | فاصله بین بررسی‌ها (ثانیه) |
+| `min_start_chars` | `int` | `5` | حداقل کاراکتر برای شروع |
+| `on_update` | `callable` | `None` | تابع `callback` |
+| `strip_prefix` | `str` | `None` | پیشوند حذف شونده |
+
+**بازگشت**: متن پاسخ (`string`)
+
+**الگوریتم**:
+
+1. انتظار برای ظاهر شدن `.ds-message`
+2. خواندن متن آخرین پیام
+3. بررسی ثبات متن
+4. بازگرداندن متن در صورت پایداری
+5. بازگرداندن آخرین متن در صورت اتمام زمان
+
+---
+
+### initMods/initMessages.py - پیام‌های اولیه
+
+**عملکرد**: ارسال پیام‌های اولیه برای راه‌اندازی چت
+
+#### تابع InitChatMessage
+
+```python
+def InitChatMessage(browser, page):
+    prompt = f"""
+    system_prompt: your deepseek_cli, a model of the popular LLM 'deepseek'
+    that is being runned in the cli with a headless web automator...
+    """
+    page.get_by_placeholder("Message DeepSeek").fill(prompt)
+    page.keyboard.press("Enter")
+```
+
+**هدف**: ارسال پیام اولیه برای حالت چت عادی
+
+#### تابع InitLinuxMessage
+
+```python
+def InitLinuxMessage(browser, page):
+    prompt = f"""
+    You are a SYSTEMATIC LINUX AUTOMATION ASSISTANT...
+    """
+    page.get_by_placeholder("Message DeepSeek").fill(prompt)
+    page.keyboard.press("Enter")
+```
+
+**هدف**: ارسال پیام اولیه برای حالت اتوماسیون لینوکس
+
+#### تابع customeInitMessage
+
+```python
+def customeInitMessage(browser, page, prompt):
+    page.get_by_placeholder("Message DeepSeek").fill(prompt)
+    page.keyboard.press("Enter")
+```
+
+**هدف**: ارسال پیام اولیه سفارشی
+
+---
+
+### useExamples/chatWithModel.py - حلقه اصلی چت
+
+**عملکرد**: حلقه اصلی تعامل با DeepSeek
+
+#### تابع chatLoop
+
+```python
+def chatLoop(page, use=1, sudo_password=None, max_com=100000):
+```
+
+**پارامترها**:
+
+| پارامتر | نوع | مقدار پیش‌فرض | توضیح |
+|---------|-----|---------------|--------|
+| `page` | `Page` | - | شیء صفحه `Playwright` |
+| `use` | `int` | `1` | حالت اجرا (`1`: عادی, `2`: لینوکس) |
+| `sudo_password` | `str` | `None` | رمزعبور `sudo` |
+| `max_com` | `int` | `100000` | حداکثر تعداد دستورات |
+
+#### تابع normalChat
+
+```python
+def normalChat(page):
+    print(art)
+    while True:
+        print(colored("Prompt", "yellow", "on_black"))
+        prompt = input()
+        SendMessage(page, prompt)
+        print()
+        print()
+        response = GetLastResponse(page)
+        print(colored("DeepSeek", "blue", "on_black"))
+        print(f"\033[1m{response}\033[0m")
+        print()
+```
+
+**جریان**:
+
+1. نمایش آرت ASCII
+2. حلقه بی‌نهایت:
+   - نمایش `Prompt`
+   - دریافت ورودی کاربر
+   - ارسال پیام
+   - دریافت پاسخ
+   - نمایش پاسخ
+
+#### تابع linuxChat
+
+```python
+def linuxChat(page, sudo_password=None):
+```
+
+**عملکرد**: حالت اتوماسیون لینوکس
+
+**مراحل**:
+
+1. **تشخیص سیستم عامل**:
+
+```python
+current_os = platform.system().lower()
+```
+
+- `Linux`: استفاده از `bash`
+- `Windows`: استفاده از `WSL`
+
+2. **ارتقاء به `root`**:
+
+```python
+if sudo_password:
+    process = subprocess.Popen(
+        "sudo su",
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    stdout, stderr = process.communicate(
+        input=sudo_password + "\n",
+        timeout=10,
+    )
+```
+
+3. **تابع execute_command**:
+
+```python
+def execute_command(command):
+    if current_os == "linux":
+        result = subprocess.run(
+            command.strip(),
+            shell=True,
+            text=True,
+            capture_output=True,
+            timeout=120,
+        )
+    else:
+        result = subprocess.run(
+            ["wsl", "bash", "-c", command.strip()],
+            text=True,
+            capture_output=True,
+            timeout=120,
+        )
+    return result
+```
+
+4. **تابع send_systematic_prompt**:
+
+   - ارسال پیام راهنما به مدل
+   - شامل تسک و قوانین اجرایی
+
+5. **حلقه اصلی**:
+
+```python
+while not task_complete and command_count < max_commands:
+    response = GetLastResponse(page)
+    
+    if "--PK--PK--PK--" in response.strip():
+        task_complete = True
+        break
+    
+    if response.strip():
+        result = execute_command(response.strip())
+        command_count += 1
+        
+        if not task_complete:
+            output_info = f"""
+            Command executed: {response.strip()}
+            Exit code: {result.returncode}
+            STDOUT:\n{result.stdout}\n
+            STDERR:\n{result.stderr}\n
+            """
+            SendMessage(page, follow_up)
+```
+
+---
+
+## توابع
+
+### لیست کامل توابع
+
+| تابع | فایل | پارامترها | بازگشت | توضیح |
+|------|------|-----------|--------|--------|
+| `SendMessage` | `Mods/Message.py` | `page`, `message` | `None` | ارسال پیام |
+| `SendGetMessage` | `Mods/Message.py` | `page`, `message` | `string` | ارسال و دریافت پیام |
+| `LoginToDeepSeek` | `initMods/Loginer.py` | `evar`, `pvar`, `page`, `url` | `bool` | ورود به DeepSeek |
+| `GetLastResponse` | `initMods/GetLastResponse.py` | `page`, `max_wait_ms`, ... | `string` | دریافت آخرین پاسخ |
+| `InitChatMessage` | `initMods/initMessages.py` | `browser`, `page` | `None` | پیام اولیه چت |
+| `InitLinuxMessage` | `initMods/initMessages.py` | `browser`, `page` | `None` | پیام اولیه لینوکس |
+| `customeInitMessage` | `initMods/initMessages.py` | `browser`, `page`, `prompt` | `None` | پیام اولیه سفارشی |
+| `chatLoop` | `useExamples/chatWithModel.py` | `page`, `use`, `sudo_password`, `max_com` | `None` | حلقه اصلی چت |
+| `normalChat` | `useExamples/chatWithModel.py` | `page` | `None` | حالت چت عادی |
+| `linuxChat` | `useExamples/chatWithModel.py` | `page`, `sudo_password` | `None` | حالت اتوماسیون لینوکس |
+| `execute_command` | `useExamples/chatWithModel.py` | `command` | `CompletedProcess` | اجرای دستور |
+| `send_systematic_prompt` | `useExamples/chatWithModel.py` | `task` | `None` | ارسال پیام سیستماتیک |
+
+---
+
+## نحوه اجرا
+
+### پیش‌نیازها
+
+- `Python 3.10` یا بالاتر
+- مرورگر `Chromium`
+- لینوکس یا `WSL` (برای حالت اتوماسیون)
+
+### مراحل نصب
+
+```bash
+# 1. کلون کردن ریپازیتوری
+git clone https://github.com/your-repo/dal.git
+cd dal
+
+# 2. ایجاد محیط مجازی
+python -m venv venv
+source venv/bin/activate
+
+# 3. نصب وابستگی‌ها
+pip install -r requirements.txt
+
+# 4. نصب Chromium
+playwright install chromium
+
+# 5. تنظیم اطلاعات ورود
+# ویرایش creds.py یا استفاده از متغیرهای محیطی
+
+# 6. اجرای برنامه
+python main.py
+```
+
+### آرگومان‌های اجرا
+
+```bash
+# حالت عادی
+python main.py
+
+# حالت لینوکس (با رمزعبور)
+python main.py --use 2 --sudo-password YOUR_PASSWORD
+```
+
+---
+
+## مشکلات شناخته شده
+
+### باگ‌ها
+
+| شماره | مشکل | توضیح |
+|-------|--------|--------|
+| 1 | خطا در `SendGetMessage` | فراخوانی `GetLastResponse()` بدون پارامتر `page` |
+| 2 | `chatLoop()` در `case 1` | فراخوانی `chatLoop()` بدون آرگومان `page` |
+| 3 | `chatWithModel.py` بیش از حد بزرگ | بیش از ۵۰۰ خط در یک فایل |
+
+### محدودیت‌ها
+
+| شماره | محدودیت | توضیح |
+|-------|----------|--------|
+| 1 | فقط DeepSeek | پشتیبانی از مدل‌های دیگر نیست |
+| 2 | بدون `CLI args` | آرگومان‌های خط فرمان پشتیبانی نمی‌شوند |
+| 3 | بدون تست | تست خودکار وجود ندارد |
+| 4 | بدون `logging` | فقط `print` استفاده شده |
+| 5 | فقدان `__init__.py` | پوشه‌ها `package` نیستند |
+
+---
+
+## پیشنهادات بهبود
+
+### اولویت بالا
+
+| مورد | توضیح |
+|------|--------|
+| اصلاح باگ‌های فراخوانی توابع | رفع مشکلات `SendGetMessage` و `chatLoop` |
+| حذف رمزعبور hardcoded | استفاده از متغیرهای محیطی |
+| اضافه کردن `Docstrings` | توضیحات توابع |
+| اضافه کردن `Type Hints` | نوع داده‌ها |
+
+### اولویت متوسط
+
+| مورد | توضیح |
+|------|--------|
+| `Configuration File` | `YAML/JSON` به جای کد سخت‌شده |
+| `CLI Arguments` | استفاده از `argparse` |
+| `__init__.py` | تبدیل به `package` |
+| جداسازی `chatWithModel.py` | تقسیم به فایل‌های کوچکتر |
+
+### اولویت پایین
+
+| مورد | توضیح |
+|------|--------|
+| تست خودکار | استفاده از `pytest` |
+| `Dockerfile` | اجرای ایزوله |
+| `Server Mode` | `API` برای استفاده راه دور |
+
+---
+
+## نکات امنیتی
+
+### خطرات
+
+1. **رمزعبور در کد**: `creds.py` حاوی رمزعبور واقعی است
+2. **پورت دیباگ باز**: پورت `۹۲۲۲` برای remote debugging باز است
+3. **غیرفعال کردن امنیت**: `--disable-web-security` استفاده شده
+
+### راه‌حل‌ها
+
+1. **استفاده از `.env`**:
+
+```bash
+DEEPSEEK_EMAIL=your@email.com
+DEEPSEEK_PASSWORD=yourpassword
+```
+
+2. **استفاده از `Keyring`**:
+
+```python
+import keyring
+password = keyring.get_password("deepseek", "user")
+```
+
+3. **اضافه کردن به `.gitignore`**:
+
+```bash
+creds.py
+.env
+```
+
+---
+
+## خلاصه
+
+پروژه DAL یک ابزار اتوماسیون لینوکس با استفاده از `Python` و `Playwright` است. با وجود برخی باگ‌ها و محدودیت‌ها، پایه خوبی برای توسعه آینده دارد. اولویت اصلی باید رفع باگ‌ها، بهبود امنیت و اضافه کردن مستندات باشد.

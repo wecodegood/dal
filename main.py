@@ -1,5 +1,7 @@
 #framework
 from playwright.sync_api import sync_playwright
+from playwright_stealth import Stealth
+
 
 # moduals:
     #main moduals:
@@ -22,39 +24,51 @@ from creds import *
     # simple moduals:
 from Mods.Message import SendMessage
 import time
+import os
+import subprocess
+
+
 
 
 with sync_playwright() as p:
 
-
-    browser = p.firefox.launch(
-        headless=True,
-        # slow_mo=2000
-    )
-
-    # context saves the settings we whant to modify in the prefrencec
-    # for example here i did this to make deepseek.com go dark mode because i was getting blind
-    context = browser.new_context(
-        color_scheme='dark'  # to make it go dark mode
-        
+    browser = p.chromium.launch_persistent_context(
+        executable_path="/usr/bin/chromium",
+        user_data_dir="./config",
+        headless=False,
+        args=[
+            '--disable-blink-features=AutomationControlled',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--disable-extensions',
+            '--disable-setuid-sandbox',
+            '--remote-debugging-port=9222'
+        ],
+        viewport={'width': 720, 'height': 480}
     )
     
-    page = context.new_page()
+    page = browser.new_page()
+    st = Stealth()
+    st.apply_stealth_sync(page)
+    
+    page.set_extra_http_headers({
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    })
 
 
-    LoginToDeepSeek(email, password, browser, page) # this is a function from a file named Loginer.py located in initMods folder
+    LoginToDeepSeek(email, password, page)
 
     InitLinuxMessage(browser, page)
 
-    # Use normal chat mode
-    # chatLoop(page)
-    
-    # Use Linux terminal mode (uncomment to enable)
     chatLoop(page, use=2, sudo_password=8088)
     
-
-
-
-    time.sleep(10000)
-
     browser.close()

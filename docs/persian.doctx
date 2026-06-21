@@ -1,0 +1,994 @@
+# مستندات جامع پروژه DAL - اتوماسیون لینوکس با DeepSeek
+
+---
+
+## فهرست مطالب
+
+1. [معرفی کلی](#معرفی-کلی)
+2. [معماری پروژه](#معماری-پروژه)
+3. [ساختار فایل‌ها](#ساختار-فایل‌ها)
+4. [توضیح کامل هر فایل](#توضیح-کامل-هر-فایل)
+5. [نحوه عملکرد سیستم](#نحوه-عملکرد-سیستم)
+6. [API و توابع](#api-و-توابع)
+7. [وابستگی‌ها](#وابستگی‌ها)
+8. [نحوه نصب و اجرا](#نحوه-نصب-و-اجرا)
+9. [موارد بهبود](#موارد-بهبود)
+10. [قابلیت‌های قابل اضافه](#قابلیت‌های-قابل-اضافه)
+11. [مشکلات شناخته شده](#مشکلات-شناخته-شده)
+12. [نکات امنیتی](#نکات-امنیتی)
+
+---
+
+## معرفی کلی
+
+### پروژه چیست؟
+
+DAL (DeepSeek Automation Linux) یک ابزار خط فرمان (CLI) است که با استفاده از مدل زبانی DeepSeek، وظایف لینوکس را به صورت خودکار اجرا می‌کند. این ابزار با اتوماسیون وب (Playwright) کار می‌کند و قادر است:
+
+- به صورت خودکار وارد حساب DeepSeek شود
+- پیام‌های کاربر را به مدل ارسال کند
+- پاسخ‌های مدل را دریافت و تحلیل کند
+- دستورات لینوکسی را در ترمینال اجرا کند
+- نتایج را به مدل بازگرداند تا مرحله بعدی را تعیین کند
+
+### هدف پروژه
+
+هدف اصلی این پروژه ایجاد یک دستیار هوشمند لینوکس است که بتواند:
+- وظایف پیچیده لینوکس را به صورت گام به گام انجام دهد
+- پیش‌نیازها را به صورت خودکار بررسی و نصب کند
+- خطاها را شناسایی و رفع کند
+- فرآیند نصب و پیکربندی را ساده کند
+
+### فناوری‌های استفاده شده
+
+| فناوری | نسخه | هدف |
+|--------|------|------|
+| Python | 3.10+ | زبان برنامه‌نویسی اصلی |
+| Playwright | latest | اتوماسیون مرورگر |
+| playwright_stealth | latest | جلوگیری از تشخیص اتوماسیون |
+| Colorama | latest | رنگ‌بندی خروجی ترمینال |
+| Termcolor | latest | رنگ‌بندی متن |
+
+---
+
+## معماری پروژه
+
+### نمای کلی سیستم
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     main.py                              │
+│                   (Entry Point)                          │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│              Playwright Browser                          │
+│         (Chromium with Stealth Mode)                     │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│                  DeepSeek Web Interface                  │
+│              (https://chat.deepseek.com)                 │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────────┐
+│                   chatWithModel.py                       │
+│              (Main Chat Loop)                            │
+│  ┌──────────────────┐    ┌──────────────────────────┐   │
+│  │   normalChat()   │    │      linuxChat()          │   │
+│  │  (Normal Mode)   │    │   (Linux Automation)      │   │
+│  └──────────────────┘    └──────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### جریان داده
+
+```
+کاربر ──► SendMessage() ──► DeepSeek ──► GetLastResponse() ──► کاربر
+                │                              │
+                ▼                              ▼
+         ┌──────────────┐              ┌──────────────┐
+         │  ارسال پیام  │              │  دریافت پاسخ │
+         │  به مرورگر   │              │  از مرورگر   │
+         └──────────────┘              └──────────────┘
+```
+
+### جریان حالت لینوکس
+
+```
+کاربر ──► ارسال تسک ──► DeepSeek ──► دریافت دستور ──► اجرای دستور ──► بازگشت خروجی
+                │                              │                        │
+                ▼                              ▼                        ▼
+         ┌──────────────┐              ┌──────────────┐          ┌──────────────┐
+         │  send_systematic_prompt()  │  execute_command()     │  SendMessage()│
+         └──────────────┘              └──────────────┘          └──────────────┘
+```
+
+---
+
+## ساختار فایل‌ها
+
+```
+dal/
+├── main.py                 # فایل اصلی برنامه
+├── art.py                  # آرت ASCII
+├── creds.py                # اطلاعات ورود
+├── requirements.txt        # وابستگی‌ها
+├── .gitignore              # فایل‌های نادیده گرفته شده
+│
+├── Mods/                   # ماژول‌های اصلی
+│   └── Message.py          # توابع ارسال/دریافت پیام
+│
+├── initMods/               # ماژول‌های راه‌اندازی
+│   ├── Loginer.py          # تابع ورود
+│   ├── GetLastResponse.py  # تابع دریافت پاسخ
+│   └── initMessages.py     # پیام‌های اولیه
+│
+├── useExamples/            # نمونه‌های استفاده
+│   └── chatWithModel.py    # حلقه اصلی چت
+│
+├── config/                 # تنظیمات مرورگر
+│   └── (فایل‌های Chromium)
+│
+├── test/                   # تست‌ها
+│   └── index.php           # فایل تست
+│
+└── docs/                   # مستندات
+    ├── persian.doctx       # مستندات فارسی
+    ├── english.doctx       # مستندات انگلیسی
+    └── russian.doctx       # مستندات روسی
+```
+
+---
+
+## توضیح کامل هر فایل
+
+### 1. main.py - فایل اصلی
+
+**عملکرد**: فایل ورودی برنامه که مرورگر Chromium را راه‌اندازی کرده و فرآیند اتوماسیون را آغاز می‌کند.
+
+**جزئیات**:
+
+```python
+with sync_playwright() as p:
+    # راه‌اندازی مرورگر Chromium
+    browser = p.chromium.launch_persistent_context(
+        executable_path="/usr/bin/chromium",  # مسیر Chromium
+        user_data_dir="./config",             # پوشه داده کاربر
+        headless=False,                       # نمایش مرورگر
+        args=[...],                           # آرگومان‌های مرورگر
+        viewport={'width': 1920, 'height': 1080}  # اندازه صفحه
+    )
+```
+
+**آرگومان‌های مرورگر**:
+
+| آرگومان | توضیح |
+|---------|--------|
+| `--disable-blink-features=AutomationControlled` | جلوگیری از تشخیص اتوماسیون |
+| `--no-sandbox` | غیرفعال کردن sandbox (برای محیط‌های خاص) |
+| `--disable-dev-shm-usage` | جلوگیری از مشکلات حافظه |
+| `--disable-web-security` | غیرفعال کردن امنیت وب |
+| `--disable-features=IsolateOrigins,site-per-process` | غیرفعال کردن جداسازی |
+| `--disable-gpu` | غیرفعال کردن GPU |
+| `--disable-software-rasterizer` | غیرفعال کردن رسترایزر نرم‌افزاری |
+| `--disable-extensions` | غیرفعال کردن افزونه‌ها |
+| `--disable-setuid-sandbox` | غیرفعال کردن setuid sandbox |
+| `--remote-debugging-port=9222` | باز کردن پورت دیباگ |
+
+**هدرهای HTTP**:
+
+```python
+page.set_extra_http_headers({
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) ...',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept': 'text/html,application/xhtml+xml,...',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1'
+})
+```
+
+**جریان اجرا**:
+1. راه‌اندازی مرورگر
+2. ایجاد صفحه جدید
+3. اعمال Stealth
+4. تنظیم هدرهای HTTP
+5. ورود به DeepSeek
+6. ارسال پیام اولیه
+7. شروع حلقه چت
+8. بستن مرورگر
+
+---
+
+### 2. art.py - آرت ASCII
+
+**عملکرد**: نمایش لوگوی پروژه به صورت متنی در ابتدای اجرا.
+
+**محتوا**:
+```
+ $$$$$$\  $$\            $$$$$$\             $$$$$$\  
+$$  __$$\ \__|          $$  __$$\           $$  __$$\ 
+$$ /  \__|$$\ $$$$$$$\  $$ /  $$ |$$\   $$\ $$ /  \__|
+\$$$$$$\  $$ |$$  __$$\ $$ |  $$ |$$ |  $$ |$$$$\     
+ \____$$\ $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$  _|    
+$$\   $$ |$$ |$$ |  $$ |$$ $$\$$ |$$ |  $$ |$$ |      
+\$$$$$$  |$$ |$$ |  $$ |\$$$$$$ / \$$$$$$  |$$ |      
+ \______/ \__|\__|  \__| \___$$$\  \______/ \__|      
+                             \___|                    
+```
+
+**استفاده**:
+```python
+from art import art
+print(art)
+```
+
+---
+
+### 3. creds.py - اطلاعات ورود
+
+**عملکرد**: ذخیره ایمیل و رمزعبور برای ورود به DeepSeek.
+
+**محتوا**:
+```python
+email = "your5dad6666@gmail.com"
+password = "yasin.11A"
+```
+
+**⚠️ هشدار امنیتی**: این فایل حاوی اطلاعات حساس است و نباید در ریپازیتوری ذخیره شود.
+
+**بهترین روش**:
+```python
+# استفاده از متغیرهای محیطی
+import os
+email = os.getenv('DEEPSEEK_EMAIL')
+password = os.getenv('DEEPSEEK_PASSWORD')
+```
+
+---
+
+### 4. requirements.txt - وابستگی‌ها
+
+**عملکرد**: لیست پکیج‌های مورد نیاز برای اجرای برنامه.
+
+**محتوا**:
+```
+playwright
+time
+colorama
+termcolor
+```
+
+**توضیح هر پکیج**:
+
+| پکیج | نسخه | هدف |
+|-------|------|------|
+| `playwright` | latest | اتوماسیون مرورگر |
+| `time` | built-in | مدیریت زمان |
+| `colorama` | latest | رنگ‌بندی خروجی |
+| `termcolor` | latest | رنگ‌بندی متن |
+
+**نکته**: پکیج `time` جزء کتابخانه استاندارد Python است و نیازی به نصب ندارد.
+
+---
+
+### 5. Mods/Message.py - ماژول پیام
+
+**عملکرد**: توابع ارسال و دریافت پیام از DeepSeek.
+
+**توابع**:
+
+#### SendMessage(page, message)
+
+**پارامترها**:
+- `page`: شیء صفحه Playwright
+- `message`: متن پیام (string)
+
+**عملکرد**:
+1. پیدا کردن فیلد ورودی با placeholder "Message DeepSeek"
+2. پر کردن فیلد با متن پیام
+3. فشردن کلید Enter برای ارسال
+
+**کد**:
+```python
+def SendMessage(page, message):
+    page.get_by_placeholder("Message DeepSeek").fill(message)
+    page.keyboard.press("Enter")
+```
+
+#### SendGetMessage(page, message)
+
+**پارامترها**:
+- `page`: شیء صفحه Playwright
+- `message`: متن پیام (string)
+
+**بازگشت**: پاسخ DeepSeek (string)
+
+**عملکرد**:
+1. ارسال پیام با استفاده از SendMessage
+2. انتظار برای دریافت پاسخ
+3. بازگرداندن پاسخ
+
+**کد**:
+```python
+def SendGetMessage(page, message):
+    from initMods.GetLastResponse import GetLastResponse
+    page.get_by_placeholder("Message DeepSeek").fill(message)
+    page.keyboard.press("Enter")
+    response = GetLastResponse()
+    return response
+```
+
+---
+
+### 6. initMods/Loginer.py - ماژول ورود
+
+**عملکرد**: ورود خودکار به حساب DeepSeek.
+
+**تابع LoginToDeepSeek(evar, pvar, page, url)**
+
+**پارامترها**:
+- `evar`: ایمیل کاربر (string)
+- `pvar`: رمزعبور کاربر (string)
+- `page`: شیء صفحه Playwright
+- `url`: آدرس DeepSeek (string, پیش‌فرض: "https://chat.deepseek.com")
+
+**بازگشت**: True (موفق) یا False (ناموفق)
+
+**عملکرد**:
+1. رفتن به آدرس DeepSeek
+2. پیدا کردن فیلدهای ایمیل و رمزعبور
+3. پر کردن فیلدها
+4. کلیک روی دکمه "Log in"
+5. انتظار برای بارگذاری صفحه چت
+6. برگرداندن نتیجه
+
+**کد**:
+```python
+def LoginToDeepSeek(evar, pvar, page, url="https://chat.deepseek.com"):
+    page.goto(url, wait_until="networkidle")
+    
+    email_field = page.get_by_placeholder("Phone number / email address")
+    password_field = page.get_by_placeholder("Password")
+    
+    if email_field.is_visible() and password_field.is_visible():
+        email_field.fill(evar)
+        password_field.fill(pvar)
+        page.get_by_role("button", name="Log in", exact=True).click()
+        
+        try:
+            page.wait_for_selector('textarea[placeholder*="Message"]', timeout=15000)
+            return True
+        except:
+            error = page.locator('[class*="error"]').first
+            if error.is_visible():
+                print(f"Login error: {error.text_content()}")
+            return False
+    return True
+```
+
+**مدیریت خطا**:
+- اگر فیلدها قابل مشاهده نباشند، True برمی‌گرداند
+- اگر خطایی رخ دهد، پیام خطا را چاپ می‌کند
+- اگر انتظار طولانی شود (15 ثانیه)، False برمی‌گرداند
+
+---
+
+### 7. initMods/GetLastResponse.py - ماژول دریافت پاسخ
+
+**عملکرد**: دریافت آخرین پاسخ از DeepSeek با انتظار برای تکمیل.
+
+**تابع GetLastResponse(page, max_wait_ms, stable_checks_required, ...)**
+
+**پارامترها**:
+- `page`: شیء صفحه Playwright
+- `max_wait_ms`: حداکثر زمان انتظار بر حسب میلی‌ثانیه (پیش‌فرض: 60000)
+- `stable_checks_required`: تعداد بررسی‌های پایدار برای تأیید تکمیل (پیش‌فرض: 5)
+- `poll_interval_s`: فاصله بین بررسی‌ها بر حسب ثانیه (پیش‌فرض: 0.2)
+- `min_start_chars`: حداقل تعداد کاراکتر برای شروع (پیش‌فرض: 5)
+- `on_update`: تابع callback برای به‌روزرسانی (پیش‌فرض: None)
+- `strip_prefix`: پیشوند برای حذف از پاسخ (پیش‌فرض: None)
+
+**بازگشت**: متن پاسخ (string)
+
+**الگوریتم**:
+1. انتظار برای ظاهر شدن اولین پیام
+2. خواندن متن آخرین پیام
+3. بررسی ثبات متن (آیا تغییر کرده؟)
+4. اگر متن پایدار بود (5 بار پشت سر هم یکسان)، پاسخ را برگردان
+5. اگر زمان تمام شد، آخرین متن را برگردان
+
+**کد**:
+```python
+def GetLastResponse(
+    page,
+    max_wait_ms: int = 60000,
+    stable_checks_required: int = 5,
+    poll_interval_s: float = 0.2,
+    min_start_chars: int = 5,
+    on_update=None,
+    strip_prefix: str | None = None,
+):
+    import time
+
+    page.wait_for_selector(".ds-message", timeout=10000)
+
+    last_text = ""
+    stable_count = 0
+    started = False
+
+    deadline = time.monotonic() + (max_wait_ms / 1000.0)
+
+    while True:
+        try:
+            messages = page.locator(".ds-message").all()
+
+            if messages:
+                current_text = messages[-1].text_content() or ""
+
+                if strip_prefix and current_text.startswith(strip_prefix):
+                    current_text = current_text[len(strip_prefix):]
+
+                if not started and len(current_text) >= min_start_chars:
+                    started = True
+
+                if started:
+                    if current_text == last_text:
+                        stable_count += 1
+                        if stable_count >= stable_checks_required:
+                            return current_text
+                    else:
+                        stable_count = 0
+                        last_text = current_text
+                        if on_update:
+                            try:
+                                on_update(current_text)
+                            except Exception:
+                                pass
+        except Exception:
+            pass
+
+        if time.monotonic() >= deadline:
+            return last_text
+
+        time.sleep(poll_interval_s)
+```
+
+**نکات مهم**:
+- از `time.monotonic()` برای اندازه‌گیری دقیق زمان استفاده می‌کند
+- در صورت بروز خطا در خواندن DOM، خطا را نادیده می‌گیرد
+- اگر زمان تمام شود، آخرین متن موجود را برمی‌گرداند (ممکن است خالی باشد)
+
+---
+
+### 8. initMods/initMessages.py - پیام‌های اولیه
+
+**عملکرد**: ارسال پیام‌های اولیه برای راه‌اندازی چت.
+
+**تابع InitChatMessage(browser, page)**
+
+**پارامترها**:
+- `browser`: شیء مرورگر Playwright
+- `page`: شیء صفحه Playwright
+
+**عملکرد**: ارسال پیام اولیه برای حالت چت عادی
+
+**محتوای پیام**:
+```
+system_prompt: your deepseek_cli, a model of the popular LLM 'deepseek' that is being runned in the cli with a headless web automator...
+```
+
+**تابع InitLinuxMessage(browser, page)**
+
+**پارامترها**:
+- `browser`: شیء مرورگر Playwright
+- `page`: شیء صفحه Playwright
+
+**عملکرد**: ارسال پیام اولیه برای حالت اتوماسیون لینوکس
+
+**محتوای پیام**:
+```
+You are a SYSTEMATIC LINUX AUTOMATION ASSISTANT. Your role is to:
+1. RECEIVE TASKS from users
+2. SYSTEMATICALLY ANALYZE prerequisites
+3. CHECK each prerequisite step by step
+4. INSTALL/CONFIGURE missing dependencies
+5. EXECUTE the main task
+6. VERIFY completion
+7. SIGNAL completion with exactly "PK"
+```
+
+**تابع customeInitMessage(browser, page, prompt)**
+
+**پارامترها**:
+- `browser`: شیء مرورگر Playwright
+- `page`: شیء صفحه Playwright
+- `prompt`: پیام سفارشی کاربر (string)
+
+**عملکرد**: ارسال پیام اولیه سفارشی
+
+---
+
+### 9. useExamples/chatWithModel.py - حلقه اصلی چت
+
+**عملکرد**: حلقه اصلی تعامل با DeepSeek.
+
+**تابع chatLoop(page, use=1, sudo_password=None, max_com=100000)**
+
+**پارامترها**:
+- `page`: شیء صفحه Playwright
+- `use`: حالت اجرا (1: عادی, 2: لینوکس)
+- `sudo_password`: رمزعبور sudo (اختیاری)
+- `max_com`: حداکثر تعداد دستورات (پیش‌فرض: 100000)
+
+**عملکرد**: انتخاب حالت اجرا بر اساس پارامتر use
+
+---
+
+#### تابع normalChat(page)
+
+**عملکرد**: حالت چت عادی با DeepSeek
+
+**جریان**:
+1. نمایش آرت ASCII
+2. حلقه بی‌نهایت:
+   - نمایش "Prompt"
+   - دریافت ورودی کاربر
+   - ارسال پیام با SendMessage
+   - انتظار برای پاسخ با GetLastResponse
+   - نمایش پاسخ
+
+**کد**:
+```python
+def normalChat(page):
+    import os
+    from initMods.GetLastResponse import GetLastResponse
+    from Mods.Message import SendMessage
+    from colorama import init
+    from termcolor import colored
+    from art import art
+
+    print(art)
+    while True:
+        print(colored("Prompt", "yellow", "on_black"))
+        prompt = input()
+        SendMessage(page, prompt)
+        print()
+        print()
+        response = GetLastResponse(page)
+        print(colored("DeepSeek", "blue", "on_black"))
+        print(f"\033[1m{response}\033[0m")
+        print()
+```
+
+---
+
+#### تابع linuxChat(page, sudo_password=None)
+
+**عملکرد**: حالت اتوماسیون لینوکس
+
+**جزئیات**:
+
+**1. تشخیص سیستم عامل**:
+```python
+current_os = platform.system().lower()
+```
+
+- Linux: استفاده از bash
+- Windows: استفاده از WSL
+- سایر: خروج با خطا
+
+**2. ارتقاء به root**:
+```python
+if sudo_password:
+    process = subprocess.Popen(
+        "sudo su",
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    stdout, stderr = process.communicate(
+        input=sudo_password + "\n",
+        timeout=10,
+    )
+```
+
+**3. تابع execute_command(command)**:
+
+**پارامترها**:
+- `command`: دستور لینوکسی (string)
+
+**بازگشت**: شیء subprocess.CompletedProcess یا None
+
+**عملکرد**:
+1. نمایش دستور در حال اجرا
+2. اجرای دستور با subprocess.run()
+3. نمایش stdout و stderr
+4. بازگشت نتیجه
+
+**کد**:
+```python
+def execute_command(command):
+    try:
+        print(colored(f"Executing: {command}", "cyan"))
+        print(colored("=" * 60, "blue"))
+
+        if current_os == "linux":
+            result = subprocess.run(
+                command.strip(),
+                shell=True,
+                text=True,
+                capture_output=True,
+                timeout=120,
+            )
+        else:
+            result = subprocess.run(
+                ["wsl", "bash", "-c", command.strip()],
+                text=True,
+                capture_output=True,
+                timeout=120,
+            )
+
+        if result.stdout:
+            print(colored("STDOUT:", "green"))
+            print(result.stdout)
+        if result.stderr:
+            print(colored("STDERR:", "red"))
+            print(result.stderr)
+
+        print(colored("=" * 60, "blue"))
+        print(colored(f"Command completed with exit code: {result.returncode}", "blue"))
+        return result
+
+    except subprocess.TimeoutExpired:
+        print(colored("Command timed out after 30 seconds", "red"))
+        return None
+    except Exception as e:
+        print(colored(f"Error executing command: {str(e)}", "red"))
+        return None
+```
+
+**4. تابع send_systematic_prompt(task)**:
+
+**پارامترها**:
+- `task`: وظیفه مورد نظر کاربر (string)
+
+**عملکرد**: ارسال پیام بلند برای راهنمایی مدل
+
+**محتوای پیام**:
+```
+SYSTEMATIC TASK EXECUTION MODE:
+Task: {task}
+
+You must systematically complete this task by:
+1. Analyzing ALL prerequisites needed
+2. Checking each prerequisite step by step
+3. Installing/configuring missing dependencies
+4. Executing the main task
+5. Verifying completion
+
+CRITICAL RULES:
+- ONLY output Linux commands, NO explanations
+- ONE command per response
+- When task is COMPLETELY DONE, output exactly: "--PK--PK--PK--"
+```
+
+**5. حلقه اصلی**:
+
+```python
+while not task_complete and command_count < max_commands:
+    response = GetLastResponse(page)
+    
+    if "--PK--PK--PK--" in response.strip():
+        task_complete = True
+        break
+    
+    if response.strip():
+        result = execute_command(response.strip())
+        command_count += 1
+        
+        if not task_complete:
+            # ارسال خروجی به مدل
+            output_info = f"""
+Command executed: {response.strip()}
+Exit code: {result.returncode}
+STDOUT:\n{result.stdout}\n
+STDERR:\n{result.stderr}\n
+"""
+            follow_up = f"""
+{output_info}
+Continue with the next step for: {task}
+Remember: When completely done, output exactly: "--PK--PK--PK--"
+"""
+            SendMessage(page, follow_up)
+```
+
+---
+
+## نحوه عملکرد سیستم
+
+### 1. راه‌اندازی اولیه
+
+```
+1. اجرای Playwright
+2. راه‌اندازی Chromium
+3. اعمال Stealth
+4. تنظیم هدرهای HTTP
+5. ورود به DeepSeek
+6. ارسال پیام اولیه
+```
+
+### 2. حالت چت عادی
+
+```
+1. کاربر پیام می‌دهد
+2. پیام به DeepSeek ارسال می‌شود
+3. انتظار برای پاسخ
+4. نمایش پاسخ
+5. تکرار
+```
+
+### 3. حالت اتوماسیون لینوکس
+
+```
+1. کاربر تسک وارد می‌کند
+2. ارسال پیام سیستماتیک
+3. دریافت دستور از مدل
+4. اجرای دستور
+5. ارسال خروجی به مدل
+6. دریافت دستور بعدی
+7. تکرار تا تکمیل
+8. دریافت سیگنال "--PK--PK--PK--"
+9. پایان
+```
+
+---
+
+## API و توابع
+
+### لیست کامل توابع
+
+| تابع | فایل | پارامترها | بازگشت | توضیح |
+|------|------|-----------|--------|--------|
+| `SendMessage` | Mods/Message.py | page, message | None | ارسال پیام |
+| `SendGetMessage` | Mods/Message.py | page, message | string | ارسال و دریافت پیام |
+| `LoginToDeepSeek` | initMods/Loginer.py | evar, pvar, page, url | bool | ورود به DeepSeek |
+| `GetLastResponse` | initMods/GetLastResponse.py | page, max_wait_ms, ... | string | دریافت آخرین پاسخ |
+| `InitChatMessage` | initMods/initMessages.py | browser, page | None | پیام اولیه چت |
+| `InitLinuxMessage` | initMods/initMessages.py | browser, page | None | پیام اولیه لینوکس |
+| `customeInitMessage` | initMods/initMessages.py | browser, page, prompt | None | پیام اولیه سفارشی |
+| `chatLoop` | useExamples/chatWithModel.py | page, use, sudo_password, max_com | None | حلقه اصلی چت |
+| `normalChat` | useExamples/chatWithModel.py | page | None | حالت چت عادی |
+| `linuxChat` | useExamples/chatWithModel.py | page, sudo_password | None | حالت اتوماسیون لینوکس |
+| `execute_command` | useExamples/chatWithModel.py | command | CompletedProcess | اجرای دستور |
+| `send_systematic_prompt` | useExamples/chatWithModel.py | task | None | ارسال پیام سیستماتیک |
+
+---
+
+## وابستگی‌ها
+
+### پکیج‌های اصلی
+
+```
+playwright>=1.40.0
+colorama>=0.4.6
+termcolor>=2.3.0
+```
+
+### پکیج‌های غیرمستقیم
+
+```
+playwright-stealth>=1.0.6
+```
+
+### نصب
+
+```bash
+pip install -r requirements.txt
+playwright install chromium
+```
+
+---
+
+## نحوه نصب و اجرا
+
+### پیش‌نیازها
+
+- Python 3.10 یا بالاتر
+- Chromium مرورگر
+- لینوکس یا WSL (برای حالت اتوماسیون)
+
+### مراحل نصب
+
+```bash
+# 1. کلون کردن ریپازیتوری
+git clone https://github.com/your-repo/dal.git
+cd dal
+
+# 2. ایجاد محیط مجازی
+python -m venv venv
+source venv/bin/activate
+
+# 3. نصب وابستگی‌ها
+pip install -r requirements.txt
+
+# 4. نصب Chromium
+playwright install chromium
+
+# 5. تنظیم اطلاعات ورود
+# ویرایش creds.py یا استفاده از متغیرهای محیطی
+
+# 6. اجرای برنامه
+python main.py
+```
+
+### آرگومان‌های اجرا
+
+```bash
+# حالت عادی
+python main.py
+
+# حالت لینوکس (با رمزعبور)
+python main.py --use 2 --sudo-password YOUR_PASSWORD
+```
+
+---
+
+## موارد بهبود
+
+### امنیتی
+
+| اولویت | مورد | توضیح |
+|--------|------|--------|
+| بالا | حذف رمزعبور از کد | استفاده از متغیرهای محیطی |
+| بالا | استفاده از `.env` | ذخیره اطلاعات حساس |
+| بالا | حذف `creds.py` | جلوگیری از افشای اطلاعات |
+| متوسط | رمزنگاری اطلاعات | استفاده از Keyring |
+| متوسط | اعتبارسنجی ورود | بررسی قدرت رمزعبور |
+
+### کیفیت کد
+
+| اولویت | مورد | توضیح |
+|--------|------|--------|
+| بالا | Docstrings | اضافه کردن توضیحات به توابع |
+| بالا | Type Hints | اضافه کردن نوع داده‌ها |
+| بالا | رفع املای `moduals` | `modules` |
+| متوسط | استفاده از `logging` | جایگزینی print |
+| متوسط | Exception Handling | بهبود مدیریت خطاها |
+| متوسط | جداسازی فایل‌ها | تقسیم `chatWithModel.py` |
+
+### عملکردی
+
+| اولویت | مورد | توضیح |
+|--------|------|--------|
+| بالا | بهبود `GetLastResponse` | استفاده از `wait_for_function()` |
+| متوسط | timeout قابل پیکربندی | تنظیم زمان انتظار |
+| متوسط | بهبود `Loginer.py` | مدیریت بهتر خطاها |
+| متوسط | retry logic | تلاش مجدد برای درخواست‌های ناموفق |
+
+### ساختاری
+
+| اولویت | مورد | توضیح |
+|--------|------|--------|
+| بالا | Configuration File | YAML/JSON به جای کد سخت‌شده |
+| بالا | CLI Arguments | استفاده از `argparse` |
+| متوسط | `__init__.py` | تبدیل به package |
+| متوسط | `setup.py` | نصب آسان |
+
+---
+
+## قابلیت‌های قابل اضافه
+
+### ویژگی‌های جدید
+
+| ویژگی | اولویت | پیچیدگی | توضیح |
+|--------|--------|---------|--------|
+| پشتیبانی از مدل‌های مختلف | بالا | متوسط | ChatGPT, Claude, Gemini |
+| حالت TUI | بالا | بالا | استفاده از `rich` یا `textual` |
+| ذخیره تاریخچه | متوسط | متوسط | ذخیره در فایل |
+| پشتیبانی از فایل | متوسط | متوسط | خواندن ورودی از فایل |
+| Pipe Support | متوسط | متوسط | `echo "task" \| dal` |
+| Server Mode | پایین | بالا | API برای استفاده راه دور |
+| Webhook | پایین | متوسط | اعلان‌ها |
+| تست خودکار | بالا | متوسط | pytest |
+| Dockerfile | متوسط | متوسط | اجرای ایزوله |
+| Proxy Support | پایین | متوسط | پشتیبانی از پروکسی |
+
+### بهبود UX
+
+| ویژگی | اولویت | پیچیدگی | توضیح |
+|--------|--------|---------|--------|
+| Progress Bar | بالا | متوسط | نمایش پیشرفت |
+| رنگ‌بندی بهتر | متوسط | پایین | بهبود ظاهر |
+| Dark/Light Mode | پایین | متوسط | پشتیبانی از تم |
+| ذخیره تسک‌ها | متوسط | متوسط | تاریخچه تسک‌ها |
+| جستجو در تاریخچه | پایین | بالا | جستجو در گذشته |
+
+---
+
+## مشکلات شناخته شده
+
+### باگ‌ها
+
+1. **خطای املایی**: `moduals` به جای `modules`
+2. **رمزعبور hardcoded**: در `creds.py`
+3. ** falta `__init__.py`**: پوشه‌ها package نیستند
+4. ** `chatWithModel.py` بیش از حد بزرگ**: بیش از 500 خط
+
+### محدودیت‌ها
+
+1. **فقط DeepSeek**: پشتیبانی از مدل‌های دیگر نیست
+2. **بدون CLI args**: آرگومان‌های خط فرمان پشتیبانی نمی‌شوند
+3. **بدون تست**: تست خودکار وجود ندارد
+4. **بدون logging**: فقط print استفاده شده
+
+---
+
+## نکات امنیتی
+
+### خطرات
+
+1. **رمزعبور در کد**: `creds.py` حاوی رمزعبور واقعی است
+2. **ذخیره در ریپازیتوری**: اطلاعات حساس ممکن است ذخیره شود
+3. **پورت دیباگ باز**: پورت 9222 برای remote debugging باز است
+4. **غیرفعال کردن امنیت**: `--disable-web-security` استفاده شده
+
+### راه‌حل‌ها
+
+1. **استفاده از `.env`**:
+```bash
+# ایجاد فایل .env
+DEEPSEEK_EMAIL=your@email.com
+DEEPSEEK_PASSWORD=yourpassword
+
+# خواندن در کد
+import os
+email = os.getenv('DEEPSEEK_EMAIL')
+```
+
+2. **استفاده از Keyring**:
+```python
+import keyring
+password = keyring.get_password("deepseek", "user")
+```
+
+3. **حذف از ریپازیتوری**:
+```bash
+# اضافه کردن به .gitignore
+creds.py
+.env
+```
+
+---
+
+## جمع‌بندی
+
+این پروژه یک ابزار قدرتمند برای اتوماسیون لینوکس با استفاده از DeepSeek است. با بهبودهای پیشنهادی و اضافه کردن قابلیت‌های جدید، می‌تواند به یک ابزار حرفه‌ای تبدیل شود.
+
+### نقاط قوت
+
+- ✅ اتوماسیون خودکار
+- ✅ پشتیبانی از حالت لینوکس
+- ✅ مدیریت خطا
+- ✅ رنگ‌بندی خروجی
+
+### نقاط ضعف
+
+- ❌ امنیت پایین
+- ❌ کمبود مستندات
+- ❌ فقدان تست
+- ❌ ساختار نامناسب
+
+### اولویت‌های بهبود
+
+1. 🔴 امنیت (رمزعبور hardcoded)
+2. 🔴 کیفیت کد (Docstrings, Type Hints)
+3. 🟡 ساختار (Configuration File, CLI args)
+4. 🟡 ویژگی‌ها (مدل‌های مختلف, TUI)
+5. 🟢 مستندات و تست

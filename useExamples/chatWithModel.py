@@ -1,4 +1,4 @@
-def chatLoop(page, use=1, sudo_password=None, max_com=20):
+def chatLoop(page, use=1, sudo_password=None, max_com=100000):
     def normalChat(page):
         import os
         from initMods.GetLastResponse import GetLastResponse
