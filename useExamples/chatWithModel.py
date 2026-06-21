@@ -4,19 +4,42 @@ def chatLoop(page, use=1, current_os=None, terminal_cmd=None, max_com=100000):
         from Mods.Message import SendMessage
         from colorama import init
         from termcolor import colored
-        from art import art
+        from art import BANNER, PROMPT_CHAR
 
         init()
-        print(art)
+        print(BANNER)
         while True:
-            print(colored("Prompt", "yellow", "on_black"))
+            print(colored(PROMPT_CHAR, "yellow", "on_black"), end="")
             prompt = input()
             if not prompt.strip():
                 continue
             SendMessage(page, prompt)
             print()
             response = GetLastResponse(page)
-            print(colored("DeepSeek", "blue", "on_black"))
+            print(colored("[AI]", "blue", "on_black"))
+            print(f"\033[1m{response}\033[0m")
+            print()
+
+    def linuxChat(page, current_os, terminal_cmd):
+        from initMods.GetLastResponse import GetLastResponse
+        from Mods.Message import SendMessage
+        from Mods.Sudo import execute_command
+        from colorama import init
+        from termcolor import colored
+        from art import BANNER, PROMPT_CHAR
+
+        init()
+
+        if current_os is None or terminal_cmd is None:
+            print(colored("Cannot start Linux mode: root elevation failed.", "red"))
+            return
+
+        print(BANNER)
+        print(colored("Linux Terminal Mode Activated", "green", "on_black"))
+        print(colored("AI will systematically complete tasks.", "yellow"))
+        print()
+            response = GetLastResponse(page)
+            print(colored("[AI]", "blue", "on_black"))
             print(f"\033[1m{response}\033[0m")
             print()
 
@@ -95,29 +118,29 @@ def chatLoop(page, use=1, current_os=None, terminal_cmd=None, max_com=100000):
             """
             SendMessage(page, systematic_prompt)
 
-        print(colored("Testing command execution...", "yellow"))
+        print(colored("[*] Testing command execution...", "yellow"))
         test_result = execute_command("echo 'Terminal test successful'", current_os, terminal_cmd)
         if test_result and test_result.returncode == 0:
-            print(colored("Terminal execution working!", "green"))
+            print(colored("[+] Terminal execution working!", "green"))
         else:
-            print(colored("Terminal execution failed!", "red"))
+            print(colored("[-] Terminal execution failed!", "red"))
 
-        print(colored("Testing cowsay functionality...", "yellow"))
+        print(colored("[*] Testing cowsay functionality...", "yellow"))
         cowsay_result = execute_command("cowsay 'Hello! I am ready to help you!'", current_os, terminal_cmd)
         if cowsay_result and cowsay_result.returncode == 0:
-            print(colored("Cowsay working! AI will use it for friendly communication!", "green"))
+            print(colored("[+] Cowsay working!", "green"))
         else:
-            print(colored("Cowsay not available, but AI will still work normally", "yellow"))
+            print(colored("[!] Cowsay not available, but AI will still work normally", "yellow"))
         print()
 
         while True:
-            print(colored("Enter your task:", "yellow", "on_black"))
+            print(colored("[?] Enter your task:", "yellow", "on_black"))
             task = input()
 
             if not task.strip():
                 continue
 
-            print(colored("Starting execution...", "green"))
+            print(colored("[*] Starting execution...", "green"))
             print()
 
             send_systematic_prompt(task)
@@ -128,19 +151,19 @@ def chatLoop(page, use=1, current_os=None, terminal_cmd=None, max_com=100000):
 
             while not task_complete and command_count < max_commands:
                 print()
-                print(colored("Waiting for AI response...", "yellow"))
+                print(colored("[*] Waiting for AI response...", "yellow"))
 
                 response = GetLastResponse(page)
-                print(colored("DeepSeek", "blue", "on_black"))
+                print(colored("[AI]", "blue", "on_black"))
                 print(f"\033[1m{response}\033[0m")
 
                 if "--PK--PK--PK--" in response.strip():
-                    print(colored("TASK COMPLETED SUCCESSFULLY!", "green", "on_black"))
+                    print(colored("[+] TASK COMPLETED SUCCESSFULLY!", "green", "on_black"))
                     task_complete = True
                     break
 
                 if response.strip() and "--PK--PK--PK--" not in response.strip():
-                    print(colored(f"About to execute: '{response.strip()}'", "magenta"))
+                    print(colored(f"[>] About to execute: '{response.strip()}'", "magenta"))
                     result = execute_command(response.strip(), current_os, terminal_cmd)
                     command_count += 1
 
@@ -172,7 +195,7 @@ Exit code: {result.returncode}
                         SendMessage(page, follow_up)
 
             if command_count >= max_commands:
-                print(colored("Maximum command limit reached. Task may be incomplete.", "yellow"))
+                print(colored("[!] Maximum command limit reached. Task may be incomplete.", "yellow"))
 
             print()
             print(colored("=" * 50, "blue"))
