@@ -38,30 +38,6 @@ def chatLoop(page, use=1, current_os=None, terminal_cmd=None, max_com=100000):
         print(colored("Linux Terminal Mode Activated", "green", "on_black"))
         print(colored("AI will systematically complete tasks.", "yellow"))
         print()
-            response = GetLastResponse(page)
-            print(colored("[AI]", "blue", "on_black"))
-            print(f"\033[1m{response}\033[0m")
-            print()
-
-    def linuxChat(page, current_os, terminal_cmd):
-        from initMods.GetLastResponse import GetLastResponse
-        from Mods.Message import SendMessage
-        from Mods.Sudo import execute_command
-        from colorama import init
-        from termcolor import colored
-        from art import art
-
-        init()
-
-        if current_os is None or terminal_cmd is None:
-            print(colored("Cannot start Linux mode: root elevation failed.", "red"))
-            return
-
-        print(art)
-        print(colored("Linux Terminal Mode Activated", "green", "on_black"))
-        print(colored("Terminal ready! AI will systematically complete tasks.", "yellow"))
-        print(colored("AI will check prerequisites and execute step-by-step.", "cyan"))
-        print()
 
         def send_systematic_prompt(task):
             systematic_prompt = f"""
