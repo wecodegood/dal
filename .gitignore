@@ -1,3 +1,31 @@
+# IDE
 .idea/
+
+# Git
 .git/
-.config
+
+# Config directory (your browser profiles)
+config/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Test directory
+test/
+
+# Virtual environment
+venv/
+env/
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local development files
+*.local

@@ -1,5 +1,0 @@
-2026/06/21-14:20:26.564 15788e Reusing MANIFEST /home/sinquf/dev/dal/config/Default/Local Storage/leveldb/MANIFEST-000001
-2026/06/21-14:20:26.575 15788e Recovering log #106
-2026/06/21-14:20:26.575 15788e Level-0 table #108: started
-2026/06/21-14:20:26.582 15788e Level-0 table #108: 29001 bytes OK
-2026/06/21-14:20:26.589 15788e Delete type=0 #106
