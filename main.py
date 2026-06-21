@@ -9,8 +9,10 @@ from Mods.Message import SendMessage
 from Mods.Setup import getBrowser
 from Mods.Sudo import elevate_to_root
 from initMods.initMessages import InitLinuxMessage
-from creds import email, password
+from creds import get_credentials
 
+
+email, password = get_credentials()
 
 ubr = sys.argv[1]
 br_list = getBrowser()
