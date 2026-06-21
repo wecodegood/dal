@@ -1,6 +1,6 @@
 <div align="center">
 
-# DAL — DeepSeek API Linux
+# DAL - DeepSeek API Linux
 
 **A terminal-based DeepSeek AI assistant with Linux automation capabilities**
 
@@ -28,9 +28,8 @@
 
 ---
 
-<div id="about">
-
-## English
+<details open>
+<summary><h2>English</h2></summary>
 
 ### About
 
@@ -58,7 +57,7 @@ DAL automates a real browser session to `chat.deepseek.com` using Playwright wit
 ### Modes
 
 #### Normal Chat Mode
-Simple conversational interface — type a prompt, get a response from DeepSeek.
+Simple conversational interface -- type a prompt, get a response from DeepSeek.
 
 #### Linux Terminal Mode
 The AI analyzes your task, generates Linux commands, and executes them step by step with output verification.
@@ -92,35 +91,31 @@ password = "your-password"
 ### Usage
 
 ```bash
-# Normal chat mode
-python main.py firefox
-
-# Linux automation mode
-python main.py chrome
+python main.py
 ```
 
-**Arguments:**
-- First argument: Browser type (`firefox` or `chrome`)
+The application will automatically detect and use Chromium.
 
 ### Project Structure
 
 ```
 dal/
-├── main.py              # Entry point
-├── creds.py             # Credentials configuration
-├── art.py               # ASCII art banner
-├── requirements.txt     # Python dependencies
-├── Mods/
-│   ├── Message.py       # Send/receive messages
-│   └── Setup.py         # Browser detection
-├── initMods/
-│   ├── Loginer.py       # DeepSeek login automation
-│   ├── GetLastResponse.py  # Response extraction
-│   └── initMessages.py  # System prompts
-├── useExamples/
-│   └── chatWithModel.py # Chat loop implementation
-├── docs/                # Documentation
-└── test/                # Tests
+  main.py              # Entry point
+  creds.py             # Credentials configuration
+  art.py               # ASCII art banner
+  requirements.txt     # Python dependencies
+  Mods/
+    Message.py         # Send/receive messages
+    Setup.py           # Browser detection
+    Sudo.py            # Root elevation & command execution
+  initMods/
+    Loginer.py         # DeepSeek login automation
+    GetLastResponse.py # Response extraction
+    initMessages.py    # System prompts
+  useExamples/
+    chatWithModel.py   # Chat loop implementation
+  docs/                # Documentation
+  test/                # Tests
 ```
 
 ### Requirements
@@ -133,65 +128,64 @@ dal/
 
 This tool is for educational purposes. Use responsibly and in accordance with DeepSeek's terms of service.
 
-</div>
+</details>
 
 ---
 
-<div id="درباره-پروژه">
-
-## فارسی
+<details>
+<summary><h2>فارسی</h2></summary>
 
 ### درباره پروژه
 
-**DAL (DeepSeek API Linux)** یک ابزار پایتونی است که رابط خط فرمانی برای تعامل با مدل هوش مصنوعی DeepSeek فراهم می‌کند. این ابزار از اتوماسیون مرورگر از طریق Playwright برای ارتباط با رابط وب DeepSeek استفاده می‌کند و تجربه خط فرمان بومی را بدون نیاز به کلیدهای API در اختیار شما قرار می‌دهد.
+**DAL (DeepSeek API Linux)** يك ابزار پايتوني است كه رابط خط فرمان براي تعامل با مدل هوش مصنوعي DeepSeek فراهم مي‌كند. اين ابزار از اتوماسيون مرورگر از طريق Playwright براي ارتباط با رابط وب DeepSeek استفاده مي‌كند و تجربه خط فرمان بومي را بدون نياز به كليدهاي API در اختيار شما قرار مي‌دهد.
 
-### امکانات
+### امكانات
 
-| ویژگی | توضیحات |
+| ويژگي | توضيحات |
 |-------|---------|
 | **حالت چت** | چت تعاملی خط فرمان با هوش مصنوعی DeepSeek |
-| **اتوماسیون لینوکس** | دستورات خط فرمان هوشمند برای وظایف سیستم |
-| **ارتقای Root** | مدیریت خودکار دسترسی sudo |
-| **خروجی Cowsay** | نمایش دوستانه خروجی دستورات |
-| **چند پلتفرمی** | پشتیبانی از لینوکس بومی + ویندوز (از طریق WSL) |
+| **اتوماسيون لينوكس** | دستورات خط فرمان هوشمند براي وظايف سيستم |
+| **ارتقای Root** | مديريت خودکار دسترسی sudo |
+| **خروجي Cowsay** | نمايش دوستانه خروجي دستورات |
+| **چند پلتفرمي** | پشتيباني از لينوكس بومي + ويندوز (از طريق WSL) |
 
-### نحوه کار
+### نحوه كار
 
-DAL یک جلسه مرورگر واقعی به `chat.deepseek.com` را با استفاده از Playwright با حالت مخفی خودکار می‌کند:
+DAL يك جلسه مرورگر واقعي به `chat.deepseek.com` را با استفاده از Playwright با حالت مخفي خودكار مي‌كند:
 
-1. راه‌اندازی مرورگر Chromium/Firefox با اقدامات ضد تشخیص
-2. ورود خودکار به حساب DeepSeek شما
-3. فراهم کردن رابط خط فرمان برای ارسال پرامپت و دریافت پاسخ
-4. در حالت لینوکس، اجرای دستورات تولید شده توسط هوش مصنوعی در زمان واقعی
+1. راه‌اندازي مرورگر Chromium/Firefox با اقدامات ضد تشخيص
+2. ورود خودكار به حساب DeepSeek شما
+3. فراهم كردن رابط خط فرمان براي ارسال پرامپت و دريافت پاسخ
+4. در حالت لينوكس، اجراي دستورات توليد شده توسط هوش مصنوعي در زمان واقعي
 
 ### حالت‌ها
 
-#### حالت چت عادی
-رابط مکالمه‌ای ساده — پرامپت تایپ کنید، پاسخ DeepSeek را دریافت کنید.
+#### حالت چت عادي
+رابط مكالمه‌اي ساده -- پرامپت تايپ كنيد، پاسخ DeepSeek را دريافت كنيد.
 
-#### حالت ترمینال لینوکس
-هوش مصنوعی وظیفه شما را تحلیل می‌کند، دستورات لینوکس تولید می‌کند و آن‌ها را مرحله به مرحله با تأیید خروجی اجرا می‌کند.
+#### حالت ترمينال لينوكس
+هوش مصنوعي وظيفه شما را تحليل مي‌كند، دستورات لينوكس توليد مي‌كند و آن‌ها را مرحله به مرحله با تاييد خروجي اجرا مي‌كند.
 
 ### نصب
 
 ```bash
-# کلون مخزن
+# كلون مخزن
 git clone https://github.com/your-username/dal.git
 cd dal
 
-# نصب وابستگی‌ها
+# نصب وابستگي‌ها
 pip install -r requirements.txt
 
-# نصب مرورگرهای Playwright
+# نصب مرورگرهاي Playwright
 playwright install chromium
 
-# پیکربندی اطلاعات ورود
-# فایل creds.py را با اطلاعات حساب DeepSeek خود ویرایش کنید
+# پيكربيدي اطلاعات ورود
+# فايل creds.py را با اطلاعات حساب DeepSeek خود ويرايش كنيد
 ```
 
-### پیکربندی
+### پيكربيدي
 
-فایل `creds.py` را با اطلاعات حساب DeepSeek خود ویرایش کنید:
+فايل `creds.py` را با اطلاعات حساب DeepSeek خود ويرايش كنيد:
 
 ```python
 email = "your-email@example.com"
@@ -201,58 +195,53 @@ password = "your-password"
 ### استفاده
 
 ```bash
-# حالت چت عادی
-python main.py firefox
-
-# حالت اتوماسیون لینوکس
-python main.py chrome
+python main.py
 ```
 
-**آرگومان‌ها:**
-- آرگومان اول: نوع مرورگر (`firefox` یا `chrome`)
+برنامه به طور خودکار Chromium را شناسایی و استفاده می‌کند.
 
 ### ساختار پروژه
 
 ```
 dal/
-├── main.py              # نقطه ورود
-├── creds.py             # پیکربندی اطلاعات ورود
-├── art.py               # بنر ASCII art
-├── requirements.txt     # وابستگی‌های پایتون
-├── Mods/
-│   ├── Message.py       # ارسال/دریافت پیام‌ها
-│   └── Setup.py         # تشخیص مرورگر
-├── initMods/
-│   ├── Loginer.py       # اتوماسیون ورود DeepSeek
-│   ├── GetLastResponse.py  # استخراج پاسخ
-│   └── initMessages.py  # پرامپت‌های سیستم
-├── useExamples/
-│   └── chatWithModel.py # پیاده‌سازی حلقه چت
-├── docs/                # مستندات
-└── test/                # تست‌ها
+  main.py              # نقطه ورود
+  creds.py             # پيكربيدي اطلاعات ورود
+  art.py               # بنر ASCII art
+  requirements.txt     # وابستگي‌هاي پايتون
+  Mods/
+    Message.py         # ارسال/دریافت پیام‌ها
+    Setup.py           # تشخيص مرورگر
+    Sudo.py            # ارتقا به root و اجراي دستورات
+  initMods/
+    Loginer.py         # اتوماسيون ورود DeepSeek
+    GetLastResponse.py # استخراج پاسخ
+    initMessages.py    # پرامپت‌هاي سيستم
+  useExamples/
+    chatWithModel.py   # پياده‌سازي حلقه چت
+  docs/                # مستندات
+  test/                # تست‌ها
 ```
 
-### پیش‌نیازها
+### پيش‌نيازها
 
-- پایتون 3.10+
-- مرورگر Chromium یا Firefox
-- لینوکس بومی یا ویندوز با WSL
+- پايتون 3.10+
+- مرورگر Chromium يا Firefox
+- لينوكس بومي يا ويندوز با WSL
 
-### سلب مسئولیت
+### سلب مسئوليت
 
-این ابزار برای اهداف آموزشی است. مسئولانه و مطابق با شرایط خدمات DeepSeek استفاده کنید.
+اين ابزار براي اهداف آموزشي است. مسئولانه و مطابق با شرايط خدمات DeepSeek استفاده كنيد.
 
-</div>
+</details>
 
 ---
 
-<div id="о-проекте">
-
-## Русский
+<details>
+<summary><h2>Русский</h2></summary>
 
 ### О проекте
 
-**DAL (DeepSeek API Linux)** — это инструмент на базе Python, предоставляющий интерфейс командной строки для взаимодействия с AI-моделью DeepSeek. Он использует автоматизацию браузера через Playwright для связи с веб-интерфейсом DeepSeek, обеспечивая нативный опыт работы в командной строке без необходимости ключей API.
+**DAL (DeepSeek API Linux)** -- это инструмент на базе Python, предоставляющий интерфейс командной строки для взаимодействия с AI-моделью DeepSeek. Он использует автоматизацию браузера через Playwright для связи с веб-интерфейсом DeepSeek, обеспечивая нативный опыт работы в командной строке без необходимости ключей API.
 
 ### Возможности
 
@@ -276,7 +265,7 @@ DAL автоматизирует реальную сессию браузера 
 ### Режимы
 
 #### Обычный режим чата
-Простой интерфейс для общения — введите запрос, получите ответ от DeepSeek.
+Простой интерфейс для общения -- введите запрос, получите ответ от DeepSeek.
 
 #### Режим терминала Linux
 AI анализирует вашу задачу, генерирует команды Linux и выполняет их пошагово с проверкой вывода.
@@ -310,35 +299,31 @@ password = "your-password"
 ### Использование
 
 ```bash
-# Обычный режим чата
-python main.py firefox
-
-# Режим автоматизации Linux
-python main.py chrome
+python main.py
 ```
 
-**Аргументы:**
-- Первый аргумент: тип браузера (`firefox` или `chrome`)
+Приложение автоматически обнаружит и использует Chromium.
 
 ### Структура проекта
 
 ```
 dal/
-├── main.py              # Точка входа
-├── creds.py             # Конфигурация учётных данных
-├── art.py               # ASCII art баннер
-├── requirements.txt     # Зависимости Python
-├── Mods/
-│   ├── Message.py       # Отправка/получение сообщений
-│   └── Setup.py         # Определение браузера
-├── initMods/
-│   ├── Loginer.py       # Автоматизация входа в DeepSeek
-│   ├── GetLastResponse.py  # Извлечение ответов
-│   └── initMessages.py  # Системные промпты
-├── useExamples/
-│   └── chatWithModel.py # Реализация цикла чата
-├── docs/                # Документация
-└── test/                # Тесты
+  main.py              # Точка входа
+  creds.py             # Конфигурация учётных данных
+  art.py               # ASCII art баннер
+  requirements.txt     # Зависимости Python
+  Mods/
+    Message.py         # Отправка/получение сообщений
+    Setup.py           # Определение браузера
+    Sudo.py            # Повышение до root и выполнение команд
+  initMods/
+    Loginer.py         # Автоматизация входа в DeepSeek
+    GetLastResponse.py # Извлечение ответов
+    initMessages.py    # Системные промпты
+  useExamples/
+    chatWithModel.py   # Реализация цикла чата
+  docs/                # Документация
+  test/                # Тесты
 ```
 
 ### Требования
@@ -351,7 +336,7 @@ dal/
 
 Этот инструмент предназначен для образовательных целей. Используйте его ответственно и в соответствии с условиями использования DeepSeek.
 
-</div>
+</details>
 
 ---
 
