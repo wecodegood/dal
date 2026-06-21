@@ -1,6 +1,6 @@
 import subprocess
+import os
 import sys
-from Mods.Setup import check_chromium_installed
 from art import BANNER
 from colorama import init
 from termcolor import colored
@@ -10,19 +10,33 @@ init()
 
 def main():
     print(BANNER)
-    print(colored("Opening Chrome for manual login...", "yellow"))
-    print(colored("Log in to DeepSeek, then close this window.", "cyan"))
+    print(colored("Opening your Chrome browser...", "yellow"))
+    print(colored("Log in to DeepSeek, then close the tab.", "cyan"))
     print(colored("The session will be saved for the main app.", "cyan"))
     print()
 
-    installed, chromium_path = check_chromium_installed()
-    if not installed:
-        print(colored("Error: Chromium not found.", "red"))
+    config_path = os.path.abspath("./config")
+
+    chrome_paths = [
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+    ]
+
+    chrome = None
+    for path in chrome_paths:
+        if os.path.exists(path):
+            chrome = path
+            break
+
+    if not chrome:
+        print(colored("Error: No Chrome/Chromium found on your system.", "red"))
         sys.exit(1)
 
     args = [
-        chromium_path,
-        '--user-data-dir=./config',
+        chrome,
+        f'--user-data-dir={config_path}',
         '--disable-blink-features=AutomationControlled',
         '--no-sandbox',
         '--disable-dev-shm-usage',
@@ -53,12 +67,11 @@ def main():
     ]
 
     try:
-        subprocess.run(args)
-        print()
-        print(colored("Session saved. You can now run: python main.py", "green"))
-    except KeyboardInterrupt:
-        print()
-        print(colored("Session saved. You can now run: python main.py", "green"))
+        subprocess.Popen(args)
+        print(colored(f"Opened {chrome}", "green"))
+        print(colored("Log in, then run: python main.py", "green"))
+    except Exception as e:
+        print(colored(f"Error opening Chrome: {e}", "red"))
 
 
 if __name__ == "__main__":
