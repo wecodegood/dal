@@ -1,6 +1,5 @@
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
-import getpass
 import sys
 
 from initMods.Loginer import LoginToDeepSeek
@@ -8,12 +7,9 @@ from initMods.GetLastResponse import GetLastResponse
 from useExamples.chatWithModel import chatLoop
 from Mods.Message import SendMessage
 from Mods.Setup import getBrowser
+from Mods.Sudo import elevate_to_root
 from initMods.initMessages import InitLinuxMessage
 from creds import email, password
-
-
-def request_sudo_password():
-    return getpass.getpass("Enter sudo password: ")
 
 
 ubr = sys.argv[1]
@@ -61,7 +57,7 @@ with sync_playwright() as p:
     LoginToDeepSeek(email, password, page)
     InitLinuxMessage(browser, page)
 
-    sudo_password = request_sudo_password()
-    chatLoop(page, use=2, sudo_password=sudo_password)
+    current_os, terminal_cmd = elevate_to_root()
+    chatLoop(page, use=2, current_os=current_os, terminal_cmd=terminal_cmd)
 
     browser.close()
