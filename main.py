@@ -6,7 +6,7 @@ from initMods.Loginer import LoginToDeepSeek
 from initMods.GetLastResponse import GetLastResponse
 from useExamples.chatWithModel import chatLoop
 from Mods.Message import SendMessage
-from Mods.Setup import getBrowser
+from Mods.Setup import check_chromium_installed
 from Mods.Sudo import elevate_to_root
 from initMods.initMessages import InitLinuxMessage
 from creds import get_credentials
@@ -14,15 +14,21 @@ from creds import get_credentials
 
 email, password = get_credentials()
 
-br_list = getBrowser()
-if not br_list:
-    print("Error: Chromium browser not found. Please install Chromium.")
+installed, chromium_path = check_chromium_installed()
+if not installed:
+    print("Error: Chromium browser not found.")
+    print("Please install Chromium:")
+    print("  Ubuntu/Debian: sudo apt install chromium-browser")
+    print("  Fedora: sudo dnf install chromium")
+    print("  Arch: sudo pacman -S chromium")
     sys.exit(1)
+
+print(f"Found Chromium at: {chromium_path}")
 
 with sync_playwright() as p:
 
     browser = p.chromium.launch_persistent_context(
-        executable_path=br_list[0],
+        executable_path=chromium_path,
         user_data_dir="./config",
         headless=False,
         args=[

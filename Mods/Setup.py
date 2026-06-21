@@ -21,8 +21,15 @@ def get_chromium_path():
     return None
 
 
+def check_chromium_installed():
+    path = get_chromium_path()
+    if path:
+        return True, path
+    return False, None
+
+
 def getBrowser():
-    chromium_path = get_chromium_path()
-    if chromium_path:
-        return [chromium_path]
+    installed, path = check_chromium_installed()
+    if installed:
+        return [path]
     return []
