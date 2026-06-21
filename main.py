@@ -53,7 +53,24 @@ def main():
                     '--disable-software-rasterizer',
                     '--disable-extensions',
                     '--disable-setuid-sandbox',
-                    '--remote-debugging-port=9222'
+                    '--remote-debugging-port=9222',
+                    '--disable-background-networking',
+                    '--disable-default-apps',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--no-first-run',
+                    '--disable-popup-blocking',
+                    '--disable-notifications',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--password-store=basic',
+                    '--use-fake-ui-for-media-stream',
+                    '--disable-hang-monitor',
+                    '--disable-prompt-on-repost',
+                    '--disable-domain-reliability',
+                    '--disable-component-update',
+                    '--disable-client-side-phishing-detection',
                 ],
                 viewport={'width': 720, 'height': 480}
             )
@@ -68,7 +85,14 @@ def main():
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Linux"',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
             })
 
             if not LoginToDeepSeek(email, password, page):
